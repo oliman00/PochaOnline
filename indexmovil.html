@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-title" content="VidasCartas">
+
+    <title>Vidas y Rondas App</title>
+    
+    <style>
+        :root {
+            --primary: #ff4757;
+            --accent: #2ed573;
+            --dark: #0a0a0f;
+            --card-bg: #1a1a25;
+            --text: #ffffff;
+        }
+
+        /* Evita que el usuario seleccione texto o haga zoom accidental */
+        * {
+            touch-action: manipulation;
+            user-select: none;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            font-family: 'Segoe UI', Roboto, sans-serif;
+            background-color: var(--dark);
+            color: var(--text);
+            margin: 0;
+            padding: env(safe-area-inset-top) 15px 40px 15px; /* Ajuste para notch de iPhone */
+            display: flex;
+            justify-content: center;
+        }
+
+        .container { width: 100%; max-width: 500px; text-align: center; }
+
+        /* Estilo de la ronda arriba */
+        .rounds-display {
+            background: rgba(255,255,255,0.07);
+            padding: 12px;
+            border-radius: 20px;
+            font-weight: 900;
+            font-size: 1.2rem;
+            margin: 15px 0;
+            border: 1px solid rgba(255,255,255,0.1);
+            position: sticky;
+            top: 10px;
+            z-index: 100;
+            backdrop-filter: blur(10px);
+        }
+
+        /* Tarjetas estilo App móvil */
+        .game-card {
+            background: var(--card-bg);
+            padding: 20px;
+            border-radius: 25px;
+            margin-bottom: 15px;
+            border: 1px solid rgba(255,255,255,0.05);
+            box-shadow: 0 10px 20px rgba(0,0,0,0.3);
+        }
+
+        .player-name-game { font-size: 1.6rem; font-weight: 900; margin-bottom: 10px; }
+
+        /* Rombos táctiles */
+        .diamonds-box {
+            display: flex;
+            gap: 8px;
+            justify-content: center;
+            flex-wrap: wrap;
+            min-height: 45px;
+            padding: 10px;
+            background: rgba(0,0,0,0.4);
+            border-radius: 15px;
+            margin-bottom: 15px;
+        }
+
+        .diamond { font-size: 2.2rem; line-height: 1; }
+        .diamond.empty {
+            color: black;
+            text-shadow: -1px -1px 0 #fff, 1px -1px 0 #fff, -1px 1px 0 #fff, 1px 1px 0 #fff;
+        }
+
+        /* Botones grandes para dedos */
+        .btn-group { display: flex; gap: 10px; width: 100%; }
+        .btn-action {
+            flex: 1;
+            padding: 15px 5px;
+            border: none;
+            border-radius: 12px;
+            font-weight: 800;
+            font-size: 0.8rem;
+            text-transform: uppercase;
+        }
+        .btn-prediction { background: #333; color: white; border: 1px solid #666; }
+        .btn-win { background: var(--accent); color: #000; }
+
+        .hearts-box { display: flex; gap: 10px; justify-content: center; margin-top: 15px; }
+        .heart { font-size: 2rem; }
+
+        /* Pantallas */
+        .hidden { display: none !important; }
+
+        /* Botón de pasar ronda flotante o destacado */
+        .btn-next-round {
+            background: white;
+            color: black;
+            width: 100%;
+            padding: 20px;
+            border-radius: 20px;
+            font-size: 1.3rem;
+            font-weight: 900;
+            border: none;
+            margin-top: 20px;
+        }
+
+        #announcement {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.9); display: flex; flex-direction: column;
+            justify-content: center; align-items: center; z-index: 2000;
+        }
+
+        /* Input de color en el menú */
+        .player-setup-card {
+            background: #252535; padding: 10px; border-radius: 15px;
+            display: flex; align-items: center; gap: 10px; margin-bottom: 10px;
+        }
+    </style>
+</head>
+<body id="mainBody">
+
+    <div id="announcement" class="hidden" onclick="this.classList.add('hidden')">
+        <span id="announceMessage" style="font-size: 2rem; font-weight: 900; text-align: center; padding: 20px;"></span>
+        <p style="color: #666;">Toca para continuar</p>
+    </div>
+
+    <div class="container">
+        <div id="menu">
+            <h1 style="color: var(--primary); font-size: 2.5rem;">BARAJA VIDAS</h1>
+            <div style="background: var(--card-bg); padding: 20px; border-radius: 25px;">
+                <div style="display: flex; justify-content: center; gap: 20px; margin-bottom: 20px;">
+                    <div>Vidas<br><input type="number" id="totalLives" value="3" style="width: 50px; padding: 8px; border-radius: 10px;"></div>
+                    <div>Cartas<br><input type="number" id="maxCards" value="7" style="width: 50px; padding: 8px; border-radius: 10px;"></div>
+                </div>
+                <button onclick="addPlayer()" style="background: #444; color: white; border: none; padding: 10px 20px; border-radius: 10px; margin-bottom: 20px;">+ Añadir Jugador</button>
+                <div id="playerList"></div>
+                <button onclick="startGame()" style="background: var(--accent); color: black; border: none; padding: 18px 50px; border-radius: 15px; font-weight: 900; width: 100%;">EMPEZAR</button>
+            </div>
+        </div>
+
+        <div id="game" class="hidden">
+            <div class="rounds-display">CARTAS: <span id="currentCardsVal">0</span> ♦</div>
+            <div id="gameBoard"></div>
+            <button class="btn-next-round" onclick="processRound()">PASAR RONDA</button>
+            <button onclick="backToMenu()" style="background: none; color: #666; border: none; margin-top: 20px;">Volver al menú</button>
+        </div>
+    </div>
+
+    <script>
+        let players = [];
+        let configLives, configMaxCards, currentCards;
+        const colors = ['#ff4757', '#2ed573', '#1e90ff', '#ffa502', '#eccc68', '#70a1ff'];
+
+        function addPlayer() {
+            const name = prompt("Nombre:");
+            if (name) {
+                players.push({ 
+                    name: name, 
+                    color: colors[players.length % colors.length], 
+                    currentLives: 0, prediction: 0, actualWins: 0 
+                });
+                renderPlayerList();
+            }
+        }
+
+        function renderPlayerList() {
+            const list = document.getElementById('playerList');
+            list.innerHTML = '';
+            players.forEach((p, i) => {
+                const div = document.createElement('div');
+                div.className = 'player-setup-card';
+                div.innerHTML = `
+                    <input type="color" value="${p.color}" onchange="players[${i}].color=this.value" style="width:30px; height:30px; border:none; background:none;">
+                    <span style="flex-grow:1; text-align:left;">${p.name}</span>
+                    <span onclick="players.splice(${i},1);renderPlayerList()" style="color:red; font-weight:bold;">✕</span>
+                `;
+                list.appendChild(div);
+            });
+        }
+
+        function startGame() {
+            if (players.length === 0) return;
+            configLives = parseInt(document.getElementById('totalLives').value);
+            configMaxCards = parseInt(document.getElementById('maxCards').value);
+            currentCards = configMaxCards;
+            players.forEach(p => { p.currentLives = configLives; p.prediction = 0; p.actualWins = 0; });
+            document.getElementById('menu').classList.add('hidden');
+            document.getElementById('game').classList.remove('hidden');
+            updateUI();
+        }
+
+        function updateUI() {
+            document.getElementById('currentCardsVal').innerText = currentCards;
+            const board = document.getElementById('gameBoard');
+            board.innerHTML = '';
+            players.forEach((p, pIdx) => {
+                const isDead = p.currentLives <= 0;
+                let diamondsHtml = '';
+                for(let i=0; i<p.actualWins; i++) diamondsHtml += `<span class="diamond" style="color:${p.color}">♦</span>`;
+                for(let i=0; i<(p.prediction - p.actualWins); i++) diamondsHtml += `<span class="diamond empty">♦</span>`;
+
+                let heartsHtml = '';
+                for(let i=0; i<p.currentLives; i++) heartsHtml += `<span class="heart" style="color:${p.color}">❤</span>`;
+
+                const card = document.createElement('div');
+                card.className = 'game-card';
+                if(isDead) card.style.opacity = "0.3";
+                card.innerHTML = `
+                    <div class="player-name-game" style="color:${p.color}">${p.name}</div>
+                    <div class="diamonds-box">${diamondsHtml}</div>
+                    <div class="btn-group">
+                        <button class="btn-action btn-prediction" onclick="changeVal(${pIdx}, 'prediction')">Pedir</button>
+                        <button class="btn-action btn-win" onclick="changeVal(${pIdx}, 'actualWins')">Ganar</button>
+                    </div>
+                    <div class="hearts-box">${heartsHtml}</div>
+                `;
+                board.appendChild(card);
+            });
+        }
+
+        function changeVal(pIdx, field) {
+            if (field === 'prediction' && players[pIdx].prediction < currentCards) players[pIdx].prediction++;
+            else if (field === 'actualWins') players[pIdx].actualWins++;
+            updateUI();
+        }
+
+        function processRound() {
+            let losers = [];
+            players.forEach(p => {
+                if (p.currentLives > 0 && p.prediction !== p.actualWins) {
+                    p.currentLives--;
+                    losers.push(p.name);
+                }
+                p.prediction = 0; p.actualWins = 0;
+            });
+
+            if (losers.length > 0) {
+                if (navigator.vibrate) navigator.vibrate([200, 100, 200]); // Vibración móvil
+                showAnnouncement("FALLARON:<br>" + losers.join(", "), "var(--primary)");
+            }
+
+            if (currentCards > 2) currentCards--;
+            else currentCards = configMaxCards;
+            updateUI();
+        }
+
+        function showAnnouncement(msg, color) {
+            const el = document.getElementById('announcement');
+            const txt = document.getElementById('announceMessage');
+            txt.innerHTML = msg; txt.style.color = color;
+            el.classList.remove('hidden');
+        }
+
+        function backToMenu() {
+            document.getElementById('menu').classList.remove('hidden');
+            document.getElementById('game').classList.add('hidden');
+        }
+    </script>
+</body>
+</html>
